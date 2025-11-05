@@ -1,0 +1,12 @@
+# Environment and secrets
+.env
+
+# IB Gateway data
+jts/
+ibc/
+
+# Logs
+*.log
+
+# Docker
+*.pid

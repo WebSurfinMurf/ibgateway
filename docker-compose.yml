@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  ibgateway:
+    image: ghcr.io/gnzsnz/ib-gateway:latest
+    container_name: ibgateway-standalone
+    restart: unless-stopped
+    env_file:
+      - $HOME/projects/secrets/ibgateway.env
+    environment:
+      TWS_USERID: ${IB_USERNAME}
+      TWS_PASSWORD: ${IB_PASSWORD}
+      TRADING_MODE: ${TRADING_MODE:-paper}  # paper or live
+      READ_ONLY_API: ${READ_ONLY_API:-no}
+      VNC_SERVER_PASSWORD: ${VNC_SERVER_PASSWORD:-}
+      TWOFA_TIMEOUT_ACTION: ${TWOFA_TIMEOUT_ACTION:-restart}
+    ports:
+      - "4001:4001"  # IB Gateway live trading port
+      - "4002:4002"  # IB Gateway paper trading port
+      - "5900:5900"  # VNC port (optional, for GUI access)
+    volumes:
+      - ./jts:/root/Jts
+      - ./ibc:/root/ibc
+    networks:
+      - ibgateway-net
+
+networks:
+  ibgateway-net:
+    driver: bridge
