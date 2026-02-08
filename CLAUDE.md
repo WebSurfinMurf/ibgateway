@@ -24,7 +24,7 @@ Interactive Brokers Gateway for algorithmic trading API access. Supports paper a
 - IBC config: `./ibc`
 
 ## Secrets
-Location: `$HOME/secrets/ibgateway.env`
+Location: `$HOME/projects/secrets/ibgateway.env`
 - IB_USERNAME
 - IB_PASSWORD
 - TRADING_MODE (paper/live)
