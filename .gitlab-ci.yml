@@ -1,11 +1,22 @@
-# GitLab CI for ibgateway (documentation umbrella).
+# GitLab CI for ibgateway (documentation umbrella + deprecated standalone container).
 #
-# Source of truth is GitLab. The active IB Gateway stacks live under
-# mcp/ib-paper and mcp/ib-live — this project holds umbrella docs,
-# docker-compose for the deprecated standalone container, and reviews.
+# Source of truth is GitLab. The ACTIVE IB Gateway stacks live under
+# mcp/ib-paper and mcp/ib-live — this project holds umbrella docs and the
+# docker-compose for the DEPRECATED standalone container.
+#
+# DEPLOY IS MANUAL ON PURPOSE: ibgateway/deploy.sh does `docker compose down`
+# then `up -d`, so it ALWAYS bounces the container and would drop a live IBKR
+# session. It also deploys the deprecated standalone stack. The pipeline stays
+# green on push (validate + mirror); deploy is a manual button you press only
+# when you intend a restart.
+#
+# Runtime: the linuxserver-administrator runner (gitlab-runner-admin) is root with
+# the host docker socket and /home/administrator bind-mounted.
 
 stages:
   - validate
+  - deploy
+  - test
   - mirror
 
 variables:
@@ -26,6 +37,37 @@ validate:
     - echo "Validating deploy.sh syntax..."
     - bash -n deploy.sh
     - echo "All validations passed."
+
+# MANUAL deploy of the deprecated standalone container — never auto-fires.
+deploy:
+  stage: deploy
+  tags: [shell, linuxserver, administrator]
+  needs: [validate]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+      allow_failure: true
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: manual
+      allow_failure: true
+  script:
+    - export HOME="$ADMIN_HOME"
+    - ./deploy.sh
+  environment:
+    name: production
+
+# Manual post-deploy check (only runs if you ran deploy).
+test:
+  stage: test
+  tags: [shell, linuxserver, administrator]
+  needs: [deploy]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+      allow_failure: true
+  script:
+    - sleep 5
+    - docker compose ps
 
 # Push mirror: GitLab -> GitHub (backup).
 mirror:
