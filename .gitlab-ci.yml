@@ -1,0 +1,41 @@
+# GitLab CI for ibgateway (documentation umbrella).
+#
+# Source of truth is GitLab. The active IB Gateway stacks live under
+# mcp/ib-paper and mcp/ib-live — this project holds umbrella docs,
+# docker-compose for the deprecated standalone container, and reviews.
+
+stages:
+  - validate
+  - mirror
+
+variables:
+  ADMIN_HOME: /home/administrator
+
+# Lint config files for syntax errors.
+validate:
+  stage: validate
+  tags: [shell, linuxserver, administrator]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_PIPELINE_SOURCE == "api"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - echo "Validating docker-compose.yml..."
+    - docker compose -f docker-compose.yml config --quiet
+    - echo "Validating deploy.sh syntax..."
+    - bash -n deploy.sh
+    - echo "All validations passed."
+
+# Push mirror: GitLab -> GitHub (backup).
+mirror:
+  stage: mirror
+  tags: [shell, linuxserver, administrator]
+  needs: [validate]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_PIPELINE_SOURCE == "api"'
+  script:
+    - ./scripts/mirror-to-github.sh
+  allow_failure: true
