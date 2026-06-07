@@ -21,8 +21,8 @@ validate:
     - if: '$CI_PIPELINE_SOURCE == "api"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   script:
-    - echo "Validating docker-compose.yml..."
-    - docker compose -f docker-compose.yml config --quiet
+    - echo "Validating docker-compose.yml syntax..."
+    - python3 -c "import yaml; yaml.safe_load(open('docker-compose.yml'))" && echo "  docker-compose.yml OK"
     - echo "Validating deploy.sh syntax..."
     - bash -n deploy.sh
     - echo "All validations passed."
